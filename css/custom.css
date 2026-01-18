@@ -1,0 +1,149 @@
+/* --- RESET E BASES --- */
+html, body {
+    height: 100%;
+    scroll-behavior: smooth;
+}
+
+/* CORES PERSONALIZADAS */
+:root {
+    --azul-primario: #0d47a1;
+    --azul-claro: #1b93f5;
+    --branco-neve: #fcfcfc;
+}
+
+/* --- NAVBAR CUSTOMIZADA --- */
+nav {
+    background-color: #ffffff !important;
+    height: 80px;
+    line-height: 80px;
+}
+
+/* Ajuste para a logo não cortar */
+nav .brand-logo {
+    display: flex !important;
+    align-items: center;
+    height: 80px !important;
+}
+
+nav .brand-logo img {
+    height: 50px !important; /* Ajuste aqui se a logo ficar grande */
+    width: auto;
+}
+
+nav ul a {
+    color: #333 !important;
+    font-weight: 500;
+}
+
+nav ul a:hover {
+    color: var(--azul-primario) !important;
+}
+
+/* --- BOTÃO FALE CONOSCO (ESTILO VAZADO) --- */
+.btn-custom-outline {
+    background-color: #ffffff !important;
+    color: var(--azul-primario) !important;
+    border: 2px solid var(--azul-primario) !important;
+    box-shadow: none !important;
+    font-weight: bold !important;
+    text-transform: uppercase;
+    border-radius: 5px !important;
+    transition: 0.3s;
+    line-height: 40px !important; /* Altura interna do texto */
+    height: 40px !important;      /* Altura do botão */
+    padding: 0 20px !important;
+    display: inline-block !important;
+    margin-top: 20px !important;  /* Centraliza na barra de 80px */
+}
+
+.btn-custom-outline:hover {
+    background-color: var(--azul-primario) !important;
+    color: #ffffff !important;
+}
+
+/* --- CORREÇÃO TOTAL DAS BOLINHAS DO SLIDER (VERDE NUNCA MAIS) --- */
+
+/* Cor das bolinhas que NÃO estão selecionadas */
+.slider .indicators .indicator-item {
+    background-color: rgba(13, 71, 161, 0.2) !important; /* Azul bem clarinho */
+    margin: 0 5px !important;
+}
+
+/* Cor da bolinha que ESTÁ selecionada (Ativa) */
+.slider .indicators .indicator-item.active {
+    background-color: #0d47a1 !important; /* O Azul Marinho do Edmar */
+}
+
+/* --- SLIDER E SEÇÕES --- */
+.slider .slides li img {
+    filter: brightness(0.7);
+}
+
+.slider .caption h3 {
+    font-weight: 700;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.divider-custom {
+    width: 80px;
+    height: 3px;
+    background-color: var(--azul-primario);
+    margin: 20px auto 40px;
+}
+
+/* --- AJUSTE UNIFORME DO CARROSSEL DE TRABALHOS --- */
+#carousel-trabalhos {
+    height: 450px !important; /* Aumentamos a área do carrossel */
+}
+
+#carousel-trabalhos .carousel-item {
+    width: 320px !important; 
+    height: 320px !important;
+}
+
+#carousel-trabalhos .carousel-item img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important; /* A MÁGICA ESTÁ AQUI: corta a foto para caber no quadrado sem esticar */
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    border: 3px solid #fff; /* Moldura branca para destacar */
+}
+
+/* --- RODAPÉ --- */
+.page-footer {
+    background-color: var(--azul-primario);
+}
+
+/* --- RESPONSIVIDADE --- */
+/* --- RESPONSIVIDADE (AJUSTE DE TELAS) --- */
+
+/* 1. Para monitores menores e tablets: faz o menu virar 'sanduíche' antes de bater na logo */
+@media only screen and (max-width: 1100px) {
+    nav .hide-on-med-and-down {
+        display: none !important; /* Esconde os links de texto */
+    }
+    
+    nav .sidenav-trigger {
+        display: block !important; /* Mostra o ícone de 3 risquinhos */
+        float: right;
+        color: #0d47a1 !important;
+    }
+}
+
+/* 2. Para celulares (telas bem pequenas) */
+@media only screen and (max-width: 600px) {
+    .brand-logo {
+        font-size: 1.1rem !important;
+    }
+
+    nav .brand-logo img {
+        height: 35px !important; /* Diminui a logo para caber tudo no celular */
+        margin-top: 22px !important;
+    }
+
+    .btn-custom-outline {
+        margin-top: 10px !important;
+    }
+}
