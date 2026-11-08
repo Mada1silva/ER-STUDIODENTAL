@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+/*
+ * Identidade visual ER Studio Dental
+ * Grafite (fundo da logo) + prateado + serifada elegante nos títulos.
+ */
+@theme {
+  --color-grafite-950: #15181b;
+  --color-grafite-900: #1c2023;
+  --color-grafite-800: #252a2e; /* mesmo tom do fundo da logo */
+  --color-grafite-700: #343a3f;
+  --color-grafite-600: #4a5157;
+
+  --color-prata-50: #f7f7f6;
+  --color-prata-100: #eeeeec;
+  --color-prata-200: #dcdcd9;
+  --color-prata-300: #c3c4c2;
+  --color-prata-400: #a3a5a4;
+  --color-prata-500: #85888a;
+
+  --color-whatsapp: #25d366;
+
+  --font-serif: var(--font-cormorant), "Georgia", serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Texto "prateado" com brilho sutil, para títulos sobre fundo grafite */
+.texto-prata {
+  background: linear-gradient(180deg, #ffffff 0%, #d9dadb 45%, #9fa2a4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Componentes reutilizáveis do painel */
+@layer components {
+  .campo {
+    @apply w-full rounded-lg border border-prata-200 bg-white px-3 py-2 text-sm text-grafite-900 shadow-sm outline-none transition focus:border-grafite-600 focus:ring-2 focus:ring-grafite-600/15;
+  }
+  .rotulo {
+    @apply mb-1 block text-sm font-medium text-grafite-700;
+  }
+}
