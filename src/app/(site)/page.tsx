@@ -172,6 +172,9 @@ export default function Inicio() {
             >
               <IconeWhatsApp /> Chamar no WhatsApp
             </a>
+            <a href="/precos" className="mt-3 ml-0 inline-flex items-center rounded-full border border-prata-500/50 px-6 py-3 font-medium text-prata-100 transition hover:border-prata-200 sm:ml-3">
+              Ver tabela de preços
+            </a>
           </div>
           <ul className="space-y-4 text-prata-300">
             <li className="flex gap-3"><IconeWhatsApp className="size-5 shrink-0 text-prata-500" /> {site.telefone}</li>

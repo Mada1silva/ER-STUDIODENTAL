@@ -7,6 +7,7 @@ const links = [
   { href: "/#sobre", rotulo: "O Studio" },
   { href: "/#diferenciais", rotulo: "Diferenciais" },
   { href: "/#galeria", rotulo: "Casos" },
+  { href: "/precos", rotulo: "Preços" },
   { href: "/#contato", rotulo: "Contato" },
 ];
 
