@@ -164,17 +164,19 @@ export default function Inicio() {
             <p className="mt-4 text-prata-300">
               Fale direto com o laboratório para enviar um caso, tirar dúvidas técnicas ou pedir a tabela de preços.
             </p>
+            <div className="mt-8 flex flex-wrap gap-3">
             <a
               href={linkWhatsApp("Olá! Gostaria de receber a tabela de preços do laboratório.")}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-8 inline-flex items-center gap-2 rounded-full bg-whatsapp px-6 py-3 font-medium text-white transition hover:brightness-110"
+              className="inline-flex items-center gap-2 rounded-full bg-whatsapp px-6 py-3 font-medium text-white transition hover:brightness-110"
             >
               <IconeWhatsApp /> Chamar no WhatsApp
             </a>
-            <a href="/precos" className="mt-3 ml-0 inline-flex items-center rounded-full border border-prata-500/50 px-6 py-3 font-medium text-prata-100 transition hover:border-prata-200 sm:ml-3">
+            <a href="/precos" className="inline-flex items-center rounded-full border border-prata-500/50 px-6 py-3 font-medium text-prata-100 transition hover:border-prata-200">
               Ver tabela de preços
             </a>
+            </div>
           </div>
           <ul className="space-y-4 text-prata-300">
             <li className="flex gap-3"><IconeWhatsApp className="size-5 shrink-0 text-prata-500" /> {site.telefone}</li>
