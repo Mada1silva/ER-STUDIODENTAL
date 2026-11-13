@@ -8,9 +8,9 @@ Feito com **Next.js + Tailwind CSS + Supabase**, tudo em ferramentas gratuitas (
 | Pilar | Onde fica | Situação |
 |---|---|---|
 | 1. Ordens de Serviço (Kanban de produção) | `/painel/os` | ✅ primeira versão |
-| 2. Portal do Dentista | `/portal` | 🕓 página "em breve" (o banco já tem as regras de acesso) |
-| 3. Site institucional | `/` | ✅ primeira versão |
-| 4. Financeiro básico | `/painel/financeiro` | 🕓 próximo módulo (cada OS já guarda o valor) |
+| 2. Portal do Dentista | `/portal` | ✅ trabalhos do dentista com linha do tempo, avisos e pedido de trabalho |
+| 3. Site institucional | `/` e `/precos` | ✅ primeira versão, com tabela de preços |
+| 4. Financeiro básico | `/painel/financeiro` | ✅ fatura do mês por dentista/clínica, com resumo para WhatsApp |
 
 ## Como rodar no seu computador
 
@@ -32,7 +32,8 @@ no quadro, mas nada é salvo.
 2. No projeto, abra **SQL Editor**, cole todo o arquivo `supabase/migrations/0001_schema_inicial.sql` e clique em **Run**.
 3. (Opcional) Rode também `supabase/seed.sql` para ter dados de exemplo.
 4. Em **Authentication → Users**, crie o usuário do laboratório (e-mail e senha).
-5. No **SQL Editor**, dê a esse usuário o papel de laboratório:
+5. No **SQL Editor**, dê a esse usuário o papel de laboratório (dentistas parceiros ficam como `dentista`
+   e precisam ter `dentista_id` ligado ao cadastro deles em `perfis` para ver o portal):
    ```sql
    update public.perfis set papel = 'laboratorio'
    where id = (select id from auth.users where email = 'edmarreis.studio@gmail.com');
@@ -72,10 +73,10 @@ site-antigo/           Site estático anterior (HTML/Materialize), guardado como
 
 ## Banco de dados (resumo)
 
-- `os_status`: as 6 etapas do Kanban (Recebido → Em Modelagem → CAD → Fresagem/Cerâmica → Acabamento → Pronto).
+- `os_status`: as 5 etapas, cada uma com sua cor: Chegou (azul) → Em andamento (âmbar) → Finalizado (verde) → Saindo para entrega (roxo) → Entregue (grafite). Dentro de "Em andamento" a equipe marca a bancada (Modelagem, CAD, Fresagem/Cerâmica, Acabamento), que o dentista não vê.
 - `dentistas`: clientes do laboratório (CRO, clínica, contato). O campo `user_id` liga o dentista ao login do portal.
-- `ordens_servico`: cada trabalho, com dentista, paciente, tipo, dentes, material, escala/cor, prazo, prioridade e valor.
-- `os_historico_status`: registro automático de cada mudança de etapa (quem e quando).
+- `ordens_servico`: cada trabalho, com dentista, paciente, tipo, dentes, material, escala/cor, prazo, prioridade e valor. `status_desde` guarda quando entrou na etapa atual e `data_entrega` é preenchida sozinha ao virar "Entregue" (é a data usada na fatura).
+- `os_historico_status`: registro automático de cada mudança de etapa (quem e quando): é a linha do tempo do painel e do portal.
 - `perfis`: diz se quem entrou é do **laboratório** (vê tudo) ou **dentista** (vê só os próprios trabalhos).
 
 A segurança fica no próprio banco (Row Level Security): um dentista nunca consegue ver trabalhos de outro.
