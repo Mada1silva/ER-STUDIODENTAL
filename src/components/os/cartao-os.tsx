@@ -4,6 +4,33 @@ import Link from "next/link";
 import type { EtapaBancada, OrdemComDentista, StatusOS } from "@/types/database";
 import { ACAO_PROXIMA, INFO_STATUS, NOME_BANCADA, NOME_STATUS, NOME_TIPO, formatarNumeroOS, proximaBancada, proximoStatus, statusAnterior } from "@/lib/os/constantes";
 import { diasAte, formatarData, quando } from "@/lib/datas";
+import { CURTO_ITEM, conferenciaPendente, itensFaltando } from "@/lib/os/itens";
+
+/** Avisos do cartão: material que faltou, conferência pendente, foto da saída. */
+function SelosExtras({ ordem }: { ordem: OrdemComDentista }) {
+  const faltou = itensFaltando(ordem.itens);
+  const pronto = ordem.status === "finalizado" || ordem.status === "saindo_entrega";
+  return (
+    <>
+      {faltou.length > 0 ? (
+        <span className="rounded bg-red-100 px-1.5 py-0.5 font-medium text-red-800">Faltou: {faltou.map((c) => CURTO_ITEM[c]).join(", ")}</span>
+      ) : (
+        ordem.status === "recebido" &&
+        conferenciaPendente(ordem.itens) && (
+          <span className="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-900">
+            Conferir {ordem.itens.length} ite{ordem.itens.length > 1 ? "ns" : "m"}
+          </span>
+        )
+      )}
+      {pronto &&
+        (ordem.foto_saida_url ? (
+          <span className="rounded bg-emerald-50 px-1.5 py-0.5 font-medium text-emerald-800">Com foto</span>
+        ) : (
+          <span className="rounded bg-prata-100 px-1.5 py-0.5 text-grafite-600">Sem foto da saída</span>
+        ))}
+    </>
+  );
+}
 
 export function SeloPrazo({ ordem }: { ordem: Pick<OrdemComDentista, "data_prevista" | "status"> }) {
   if (!ordem.data_prevista || !["recebido", "em_andamento"].includes(ordem.status)) return null;
@@ -73,6 +100,7 @@ export function CartaoOS({ ordem, ocupado, aoMover, aoMoverBancada, aoArrastar }
             </span>
           )}
           <SeloPrazo ordem={ordem} />
+          <SelosExtras ordem={ordem} />
         </div>
         <p className="mt-2 text-[11px] text-prata-500">
           {s.frase} {quando(ordem.status_desde)}

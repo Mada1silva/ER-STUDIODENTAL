@@ -12,6 +12,18 @@ Feito com **Next.js + Tailwind CSS + Supabase**, tudo em ferramentas gratuitas (
 | 3. Site institucional | `/` e `/precos` | ✅ primeira versão, com tabela de preços |
 | 4. Financeiro básico | `/painel/financeiro` | ✅ fatura do mês por dentista/clínica, com resumo para WhatsApp |
 
+### Diferenciais
+
+| Diferencial | Onde fica |
+|---|---|
+| Odontograma (marcar os dentes no desenho da boca) e biblioteca visual de trabalhos, materiais e cores | Nova OS (`/painel/os/nova`) e pedido do portal (`/portal/pedido`) |
+| O que acompanha o trabalho (moldagem, mordida, análogo, componentes…) com conferência item por item na chegada; se faltar algo, o dentista vê o aviso no portal | Página da OS (`/painel/os/[id]`) e portal |
+| Foto do trabalho na saída (tirada pelo celular, guardada no Supabase Storage) | Página da OS; o dentista vê no portal e no link de acompanhamento |
+| Aviso no WhatsApp com mensagem pronta e link de acompanhamento **sem senha** | Página da OS → "Avisar o dentista"; o link abre `/acompanhar/[token]` |
+| Certificado de autenticidade com QR code (imprime ou salva em PDF) | `/acompanhar/[token]/certificado` |
+| Casos realizados e depoimentos no site (os depoimentos só aparecem quando houver depoimentos reais, com autorização) | `/` |
+| Modo TV da produção (atualiza sozinho a cada 30 s) | `/tv` |
+
 ## Como rodar no seu computador
 
 Precisa ter o [Node.js](https://nodejs.org) 20 ou mais novo instalado.
@@ -30,6 +42,8 @@ no quadro, mas nada é salvo.
 
 1. Crie uma conta grátis em https://supabase.com e um projeto novo (região: São Paulo).
 2. No projeto, abra **SQL Editor**, cole todo o arquivo `supabase/migrations/0001_schema_inicial.sql` e clique em **Run**.
+   Depois faça o mesmo com `supabase/migrations/0002_diferenciais.sql` (odontograma, conferência, foto da saída, link de acompanhamento).
+   Ele também cria no **Storage** o bucket `fotos-saida`, onde ficam as fotos da saída.
 3. (Opcional) Rode também `supabase/seed.sql` para ter dados de exemplo.
 4. Em **Authentication → Users**, crie o usuário do laboratório (e-mail e senha).
 5. No **SQL Editor**, dê a esse usuário o papel de laboratório (dentistas parceiros ficam como `dentista`
@@ -40,6 +54,7 @@ no quadro, mas nada é salvo.
    ```
 6. Em **Project Settings → API**, copie a *Project URL* e a chave *anon public*.
 7. Copie `.env.example` para `.env.local` e cole os dois valores. **Nunca** envie o `.env.local` para o GitHub.
+   Quando o site estiver no ar, preencha também `NEXT_PUBLIC_SITE_URL` com o endereço do site (é o endereço que vai nos links do WhatsApp e no QR code).
 8. Rode `npm run dev` de novo. Agora o painel pede login e salva tudo no banco.
 
 ## Estrutura de pastas
@@ -77,6 +92,8 @@ site-antigo/           Site estático anterior (HTML/Materialize), guardado como
 - `dentistas`: clientes do laboratório (CRO, clínica, contato). O campo `user_id` liga o dentista ao login do portal.
 - `ordens_servico`: cada trabalho, com dentista, paciente, tipo, dentes, material, escala/cor, prazo, prioridade e valor. `status_desde` guarda quando entrou na etapa atual e `data_entrega` é preenchida sozinha ao virar "Entregue" (é a data usada na fatura).
 - `os_historico_status`: registro automático de cada mudança de etapa (quem e quando): é a linha do tempo do painel e do portal.
+- Em cada OS também ficam: `dentes` (odontograma, numeração FDI), `itens` (o que acompanha o trabalho e se chegou ou faltou), `foto_saida_url` e `token_publico` (o código aleatório do link de acompanhamento sem senha).
+- `acompanhar_os(token)`: função do banco que a página pública usa. Ela devolve só o necessário (iniciais do paciente, etapa, foto, linha do tempo), sem valores nem observações internas.
 - `perfis`: diz se quem entrou é do **laboratório** (vê tudo) ou **dentista** (vê só os próprios trabalhos).
 
 A segurança fica no próprio banco (Row Level Security): um dentista nunca consegue ver trabalhos de outro.

@@ -7,6 +7,7 @@ const itens = [
   { href: "/painel/os", rotulo: "Ordens de Serviço", pronto: true },
   { href: "/painel/dentistas", rotulo: "Dentistas", pronto: true },
   { href: "/painel/financeiro", rotulo: "Financeiro", pronto: true },
+  { href: "/tv", rotulo: "Modo TV", pronto: true },
 ];
 
 export function MenuLateral() {

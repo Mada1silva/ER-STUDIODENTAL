@@ -6,6 +6,12 @@ import { formatarData, formatarMoeda, quando } from "@/lib/datas";
 import { linkWhatsApp } from "@/lib/config/site";
 import { LinhaDoTempo, SeloEtapa, TrilhaEtapas } from "@/components/os/etapas";
 import { IconeWhatsApp } from "@/components/site/icones";
+import { BlocoDentes } from "@/components/os/blocos-os";
+import { BotaoCopiar } from "@/components/os/botao-copiar";
+import { ConferenciaItens } from "@/components/os/conferencia-itens";
+import { indiceStatus } from "@/lib/os/constantes";
+import { caminhoAcompanhar, caminhoCertificado } from "@/lib/os/acompanhamento";
+import { urlDoSiteAtual } from "@/lib/os/origem";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +22,8 @@ export default async function TrabalhoDoDentista({ params }: { params: Promise<{
   if (!ordem || ordem.dentista_id !== perfil.dentistaId) notFound();
 
   const s = INFO_STATUS[ordem.status];
+  const urlSite = await urlDoSiteAtual();
+  const pronto = indiceStatus(ordem.status) >= indiceStatus("finalizado");
   // A bancada é detalhe interno: o dentista vê só as 5 etapas.
   const historicoDentista = historico.filter((h) => h.status_anterior !== h.status_novo);
   const campos: [string, string][] = [
@@ -63,14 +71,34 @@ export default async function TrabalhoDoDentista({ params }: { params: Promise<{
           )}
         </dl>
       </div>
-      <a
-        href={linkWhatsApp(`Olá! Tenho uma dúvida sobre a ${formatarNumeroOS(ordem.numero)} (${ordem.paciente_nome}).`)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 rounded-full bg-whatsapp px-5 py-2.5 text-sm font-medium text-white hover:brightness-110"
-      >
-        <IconeWhatsApp className="size-4" /> Falar sobre este trabalho
-      </a>
+      <div className="grid gap-6 md:grid-cols-2">
+        {ordem.foto_saida_url && (
+          <section className="rounded-2xl border border-prata-200 bg-white p-6">
+            <h2 className="font-serif text-2xl">Foto da saída</h2>
+            <p className="text-sm text-grafite-600">Assim o seu trabalho saiu do laboratório.</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={ordem.foto_saida_url} alt={`Foto do trabalho ${formatarNumeroOS(ordem.numero)}`} className="mt-4 aspect-[4/3] w-full rounded-xl object-cover" />
+          </section>
+        )}
+        <BlocoDentes ordem={ordem} />
+        <ConferenciaItens id={ordem.id} itensIniciais={ordem.itens} conferidoEm={ordem.conferido_em} laboratorio={false} />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <a
+          href={linkWhatsApp(`Olá! Tenho uma dúvida sobre a ${formatarNumeroOS(ordem.numero)} (${ordem.paciente_nome}).`)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-full bg-whatsapp px-5 py-2.5 text-sm font-medium text-white hover:brightness-110"
+        >
+          <IconeWhatsApp className="size-4" /> Falar sobre este trabalho
+        </a>
+        <BotaoCopiar texto={urlSite + caminhoAcompanhar(ordem.token_publico)} rotulo="Copiar link de acompanhamento" />
+        {pronto && (
+          <Link href={caminhoCertificado(ordem.token_publico)} className="rounded-full border border-prata-300 bg-white px-4 py-2 text-sm text-grafite-700 hover:bg-prata-50">
+            Ver certificado
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

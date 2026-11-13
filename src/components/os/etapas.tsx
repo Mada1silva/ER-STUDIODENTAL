@@ -48,11 +48,13 @@ export function TrilhaEtapas({ status, rotulos = false }: { status: StatusOS; ro
 }
 
 /** Linha do tempo vertical com data e hora de cada etapa. `interno` mostra também a bancada. */
-export function LinhaDoTempo({ status, historico, interno = false }: { status: StatusOS; historico: HistoricoStatus[]; interno?: boolean }) {
+type PassoHistorico = Pick<HistoricoStatus, "status_anterior" | "status_novo" | "alterado_em"> & { id?: number; etapa_bancada?: EtapaBancada | null };
+
+export function LinhaDoTempo({ status, historico, interno = false }: { status: StatusOS; historico: PassoHistorico[]; interno?: boolean }) {
   const i = indiceStatus(status);
   // Usa a última vez que entrou em cada etapa (se voltou uma etapa, vale a mais recente).
   const entrouEm = (s: StatusOS) => [...historico].reverse().find((h) => h.status_novo === s && h.status_anterior !== s)?.alterado_em;
-  const bancada = historico.filter((h) => h.status_novo === "em_andamento" && h.etapa_bancada) as (HistoricoStatus & { etapa_bancada: EtapaBancada })[];
+  const bancada = historico.filter((h) => h.status_novo === "em_andamento" && h.etapa_bancada) as (PassoHistorico & { etapa_bancada: EtapaBancada })[];
 
   return (
     <ol>
@@ -79,7 +81,7 @@ export function LinhaDoTempo({ status, historico, interno = false }: { status: S
               <p className="text-xs text-prata-500">{em ? quando(em) : feito ? "—" : "Aguardando"}</p>
               {interno && s.codigo === "em_andamento" &&
                 bancada.map((h) => (
-                  <p key={h.id} className="text-xs text-grafite-600">
+                  <p key={h.id ?? h.alterado_em} className="text-xs text-grafite-600">
                     · {NOME_BANCADA[h.etapa_bancada]} <span className="text-prata-500">{quando(h.alterado_em)}</span>
                   </p>
                 ))}

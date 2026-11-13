@@ -4,11 +4,13 @@ import { listarMinhasOrdens } from "@/lib/os/dados";
 import { INFO_STATUS, NOME_TIPO, formatarNumeroOS } from "@/lib/os/constantes";
 import { formatarData, quando } from "@/lib/datas";
 import { LegendaEtapas, SeloEtapa, TrilhaEtapas } from "@/components/os/etapas";
+import { CURTO_ITEM, itensFaltando } from "@/lib/os/itens";
 
 export const dynamic = "force-dynamic";
 
 function CartaoPortal({ o }: { o: OrdemComDentista }) {
   const s = INFO_STATUS[o.status];
+  const faltou = itensFaltando(o.itens);
   return (
     <Link href={`/portal/os/${o.id}`} className="block overflow-hidden rounded-xl bg-white transition hover:shadow-md" style={{ boxShadow: `inset 0 0 0 1px ${s.cor}55` }}>
       <div className="h-1.5" style={{ background: s.cor }} />
@@ -17,11 +19,22 @@ function CartaoPortal({ o }: { o: OrdemComDentista }) {
           <span className="font-mono text-xs font-semibold text-grafite-600">{formatarNumeroOS(o.numero)}</span>
           <SeloEtapa status={o.status} />
         </div>
-        <div>
-          <p className="font-medium text-grafite-900">
-            {NOME_TIPO[o.tipo_trabalho]} <span className="font-normal text-grafite-600">· {o.paciente_nome}</span>
-          </p>
-          <p className="text-xs text-prata-500">{[o.elementos && `Dentes ${o.elementos}`, o.cor && `Cor ${o.cor}`].filter(Boolean).join(" · ")}</p>
+        <div className="flex gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-grafite-900">
+              {NOME_TIPO[o.tipo_trabalho]} <span className="font-normal text-grafite-600">· {o.paciente_nome}</span>
+            </p>
+            <p className="text-xs text-prata-500">{[o.elementos && `Dentes ${o.elementos}`, o.cor && `Cor ${o.cor}`].filter(Boolean).join(" · ")}</p>
+            {faltou.length > 0 && (
+              <p className="mt-1 text-xs">
+                <span className="rounded bg-red-100 px-1.5 py-0.5 font-medium text-red-800">Faltou: {faltou.map((c) => CURTO_ITEM[c]).join(", ")}</span>
+              </p>
+            )}
+          </div>
+          {o.foto_saida_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={o.foto_saida_url} alt="" className="size-14 shrink-0 rounded-lg object-cover" />
+          )}
         </div>
         <TrilhaEtapas status={o.status} />
         <div className="grid gap-0.5 text-xs text-grafite-700">
@@ -70,6 +83,17 @@ export default async function MeusTrabalhos({ searchParams }: { searchParams: Pr
       )}
       {pedido === "ok" && <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Pedido enviado ao laboratório.</p>}
       <LegendaEtapas />
+
+      {noLab
+        .filter((o) => itensFaltando(o.itens).length)
+        .map((o) => (
+          <div key={`faltou-${o.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 ring-1 ring-red-300 ring-inset">
+            <p>
+              <strong>Faltou material na {formatarNumeroOS(o.numero)}:</strong> {itensFaltando(o.itens).map((c) => CURTO_ITEM[c]).join(", ")}. Envie para o laboratório seguir com o trabalho.
+            </p>
+            <Link href={`/portal/os/${o.id}`} className="font-medium underline underline-offset-2">Ver trabalho</Link>
+          </div>
+        ))}
 
       {prontos.map((o) => {
         const s = INFO_STATUS[o.status];

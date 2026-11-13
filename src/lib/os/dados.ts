@@ -2,7 +2,9 @@ import "server-only";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { supabaseConfigurado } from "@/lib/supabase/config";
 import { hojeISO, limitesDoMes } from "@/lib/datas";
-import type { Dentista, HistoricoStatus, OrdemComDentista } from "@/types/database";
+import type { AcompanhamentoPublico, Dentista, HistoricoStatus, OrdemComDentista } from "@/types/database";
+import { iniciais } from "./acompanhamento";
+import { itensFaltando } from "./itens";
 import { DENTISTA_DEMO_PORTAL, dentistasDemo, ordensDemo } from "./demo";
 
 /**
@@ -11,7 +13,7 @@ import { DENTISTA_DEMO_PORTAL, dentistasDemo, ordensDemo } from "./demo";
  * Quem pode ver o quê é garantido pelo banco (Row Level Security).
  */
 
-const CAMPOS_OS = "*, dentista:dentistas(id, nome, clinica)";
+const CAMPOS_OS = "*, dentista:dentistas(id, nome, clinica, whatsapp, cro, cro_uf)";
 const SETE_DIAS = 7 * 864e5;
 
 function semHistorico(o: ReturnType<typeof ordensDemo>[number]): OrdemComDentista {
@@ -115,4 +117,32 @@ export async function listarMinhasOrdens(): Promise<{ ordens: OrdemComDentista[]
     supabase.from("dentistas").select("id, nome, clinica").eq("id", perfil.dentistaId).maybeSingle(),
   ]);
   return { ordens: (ordens ?? []) as OrdemComDentista[], dentista: dentista ?? null, demo: false };
+}
+
+/**
+ * Página pública de acompanhamento (sem login): busca pelo token do link.
+ * No banco, quem responde é a função acompanhar_os, que devolve só o necessário.
+ */
+export async function buscarAcompanhamento(token: string): Promise<{ dados: AcompanhamentoPublico | null; demo: boolean }> {
+  if (!/^[a-z0-9]{10,64}$/i.test(token)) return { dados: null, demo: !supabaseConfigurado };
+
+  if (!supabaseConfigurado) {
+    const o = ordensDemo().find((x) => x.token_publico === token);
+    if (!o) return { dados: null, demo: true };
+    const d = dentistasDemo.find((x) => x.id === o.dentista_id)!;
+    return {
+      demo: true,
+      dados: {
+        numero: o.numero, tipo_trabalho: o.tipo_trabalho, elementos: o.elementos, dentes: o.dentes, material: o.material,
+        escala_cor: o.escala_cor, cor: o.cor, status: o.status, status_desde: o.status_desde, data_prevista: o.data_prevista,
+        foto_saida_url: o.foto_saida_url, token_publico: o.token_publico, paciente_iniciais: iniciais(o.paciente_nome),
+        itens_faltando: itensFaltando(o.itens), dentista: { nome: d.nome, cro: d.cro, cro_uf: d.cro_uf },
+        historico: o.historico.filter((h) => h.status_anterior !== h.status_novo),
+      },
+    };
+  }
+
+  const supabase = await criarClienteServidor();
+  const { data } = await supabase.rpc("acompanhar_os", { p_token: token });
+  return { dados: (data as AcompanhamentoPublico | null) ?? null, demo: false };
 }

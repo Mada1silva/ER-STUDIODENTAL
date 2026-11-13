@@ -7,5 +7,5 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   // Roda só nas áreas que precisam de login (o site público fica mais leve).
-  matcher: ["/painel/:path*", "/portal/:path*", "/login"],
+  matcher: ["/painel/:path*", "/portal/:path*", "/tv", "/login"],
 };

@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { supabaseConfigurado } from "@/lib/supabase/config";
+import type { ItemEnviado } from "@/types/database";
 import { ehBancadaValida, ehStatusValido, ehTipoValido } from "./constantes";
+import { dentesValidos, parseElementos } from "./dentes";
+import { ehItemValido } from "./itens";
 
 export type ResultadoAcao = { ok: true; demo?: boolean } | { ok: false; erro: string };
 
@@ -37,11 +40,70 @@ export async function moverBancada(id: string, etapa: string): Promise<Resultado
   return { ok: true };
 }
 
+/**
+ * Conferência na chegada: marca um item como "chegou" (true) ou "faltou" (false).
+ * Quando todos os itens estão conferidos, grava a hora. Se faltou algo, o portal do dentista mostra o aviso.
+ */
+export async function conferirItem(id: string, codigo: string, chegou: boolean): Promise<ResultadoAcao> {
+  if (!ehItemValido(codigo)) return { ok: false, erro: "Item inválido." };
+  if (!supabaseConfigurado) return { ok: true, demo: true };
+
+  const supabase = await criarClienteServidor();
+  const { data: ordem, error: erroLeitura } = await supabase.from("ordens_servico").select("itens, conferido_em").eq("id", id).single();
+  if (erroLeitura || !ordem) return { ok: false, erro: "OS não encontrada." };
+
+  const itens = ((ordem.itens ?? []) as ItemEnviado[]).map((i) => (i.c === codigo ? { ...i, conf: chegou } : i));
+  if (!itens.some((i) => i.c === codigo)) itens.push({ c: codigo, conf: chegou });
+  const pendente = itens.some((i) => i.conf == null);
+  const conferido_em = pendente ? null : (ordem.conferido_em ?? new Date().toISOString());
+
+  const { error } = await supabase.from("ordens_servico").update({ itens, conferido_em }).eq("id", id);
+  if (error) return { ok: false, erro: "Não foi possível salvar a conferência." };
+
+  revalidatePath(`/painel/os/${id}`);
+  revalidatePath("/painel/os");
+  revalidatePath("/portal");
+  return { ok: true };
+}
+
+/** Foto da saída: o arquivo já foi enviado ao Storage pelo navegador; aqui só guardamos o endereço. */
+export async function salvarFotoSaida(id: string, url: string | null): Promise<ResultadoAcao> {
+  if (url !== null && !/^https?:\/\/[^\s]+\/storage\/v1\/object\/public\/fotos-saida\//.test(url)) return { ok: false, erro: "Endereço da foto inválido." };
+  if (!supabaseConfigurado) return { ok: true, demo: true };
+
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase
+    .from("ordens_servico")
+    .update({ foto_saida_url: url, foto_saida_em: url ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (error) return { ok: false, erro: "Não foi possível salvar a foto." };
+
+  revalidatePath(`/painel/os/${id}`);
+  revalidatePath("/portal");
+  return { ok: true };
+}
+
 export type EstadoFormOS = { erro?: string; demo?: boolean };
 
 function texto(form: FormData, campo: string): string | null {
   const v = String(form.get(campo) ?? "").trim();
   return v === "" ? null : v;
+}
+
+/** Campos do bloco "Trabalho" (odontograma, cor, o que acompanha), iguais nos dois formulários. */
+function camposTrabalho(form: FormData) {
+  const elementos = texto(form, "elementos");
+  const marcados = String(form.get("dentes") ?? "").split(",").filter(Boolean);
+  const dentes = dentesValidos(marcados.length ? marcados : parseElementos(elementos));
+  const itens: ItemEnviado[] = [...new Set(form.getAll("itens").map(String))].filter(ehItemValido).map((c) => ({ c, conf: null }));
+  return {
+    elementos,
+    dentes,
+    material: texto(form, "material"),
+    escala_cor: texto(form, "escala_cor"),
+    cor: texto(form, "cor_texto") ?? texto(form, "cor"),
+    itens,
+  };
 }
 
 /** Cria uma nova OS a partir do formulário "Nova OS". */
@@ -68,10 +130,7 @@ export async function criarOrdem(_estado: EstadoFormOS, form: FormData): Promise
       dentista_id: dentistaId,
       paciente_nome: paciente,
       tipo_trabalho: tipo,
-      elementos: texto(form, "elementos"),
-      material: texto(form, "material"),
-      escala_cor: texto(form, "escala_cor"),
-      cor: texto(form, "cor"),
+      ...camposTrabalho(form),
       prioridade: form.get("prioridade") === "urgente" ? "urgente" : "normal",
       data_prevista: texto(form, "data_prevista"),
       valor,
@@ -109,10 +168,7 @@ export async function pedirTrabalho(_estado: EstadoFormOS, form: FormData): Prom
     dentista_id: perfil.dentista_id,
     paciente_nome: paciente,
     tipo_trabalho: tipo,
-    elementos: texto(form, "elementos"),
-    material: texto(form, "material"),
-    escala_cor: texto(form, "escala_cor"),
-    cor: texto(form, "cor"),
+    ...camposTrabalho(form),
     prioridade: form.get("urgente") ? "urgente" : "normal",
     data_prevista: texto(form, "data_prevista"),
     descricao: [instrucoes, envio ? `Envio do material: ${envio}` : null].filter(Boolean).join("\n") || null,

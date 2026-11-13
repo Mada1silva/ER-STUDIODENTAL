@@ -7,6 +7,12 @@ import { SeloPrazo } from "@/components/os/cartao-os";
 import { LinhaDoTempo, SeloEtapa, TrilhaEtapas } from "@/components/os/etapas";
 import { BotaoAvancar } from "@/components/os/botao-avancar";
 import { AvisoDemo } from "@/components/painel/aviso-demo";
+import { AvisoDentista, BlocoDentes } from "@/components/os/blocos-os";
+import { ConferenciaItens } from "@/components/os/conferencia-itens";
+import { FotoSaida } from "@/components/os/foto-saida";
+import { indiceStatus } from "@/lib/os/constantes";
+import { caminhoAcompanhar, linkWhatsAppDentista, mensagemAvisoDentista } from "@/lib/os/acompanhamento";
+import { urlDoSiteAtual } from "@/lib/os/origem";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +20,8 @@ export default async function DetalheOS({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const { ordem, historico, demo } = await buscarOrdem(id);
   if (!ordem) notFound();
+  const urlSite = await urlDoSiteAtual();
+  const wppFaltou = linkWhatsAppDentista(ordem.dentista?.whatsapp, mensagemAvisoDentista(ordem, urlSite + caminhoAcompanhar(ordem.token_publico)));
 
   const campos: [string, string][] = [
     ["Dentista", ordem.dentista ? `${ordem.dentista.nome}${ordem.dentista.clinica ? ` · ${ordem.dentista.clinica}` : ""}` : "—"],
@@ -74,6 +82,13 @@ export default async function DetalheOS({ params }: { params: Promise<{ id: stri
           <h2 className="mb-4 font-serif text-2xl">Linha do tempo</h2>
           <LinhaDoTempo status={ordem.status} historico={historico} interno />
         </section>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <BlocoDentes ordem={ordem} />
+        <ConferenciaItens key={JSON.stringify(ordem.itens)} id={ordem.id} itensIniciais={ordem.itens} conferidoEm={ordem.conferido_em} laboratorio demo={demo} linkWhatsApp={wppFaltou} />
+        <FotoSaida id={ordem.id} token={ordem.token_publico} fotoInicial={ordem.foto_saida_url} pronto={indiceStatus(ordem.status) >= indiceStatus("finalizado")} demo={demo} />
+        <AvisoDentista ordem={ordem} urlSite={urlSite} />
       </div>
     </div>
   );

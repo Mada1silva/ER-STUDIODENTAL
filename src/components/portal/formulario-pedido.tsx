@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import { pedirTrabalho, type EstadoFormOS } from "@/lib/os/acoes";
-import { CORES_VITA_CLASSICAL, ESCALAS_COR, FORMAS_ENVIO, TIPOS_TRABALHO } from "@/lib/os/constantes";
+import { FORMAS_ENVIO } from "@/lib/os/constantes";
+import { CamposTrabalho } from "@/components/os/campos-trabalho";
 
 export function FormularioPedido({ prazoPadrao }: { prazoPadrao: string }) {
   const [estado, enviar, enviando] = useActionState<EstadoFormOS, FormData>(pedirTrabalho, {});
@@ -14,34 +15,6 @@ export function FormularioPedido({ prazoPadrao }: { prazoPadrao: string }) {
         <input id="paciente_nome" name="paciente_nome" required className="campo" placeholder="Nome ou iniciais" />
       </div>
       <div>
-        <label htmlFor="tipo_trabalho" className="rotulo">Tipo de trabalho *</label>
-        <select id="tipo_trabalho" name="tipo_trabalho" required className="campo" defaultValue="">
-          <option value="" disabled>Selecione…</option>
-          {TIPOS_TRABALHO.map((t) => <option key={t.codigo} value={t.codigo}>{t.nome}</option>)}
-        </select>
-      </div>
-      <div>
-        <label htmlFor="elementos" className="rotulo">Dentes / elementos</label>
-        <input id="elementos" name="elementos" className="campo" placeholder="Ex.: 11, 21 ou arcada superior" />
-      </div>
-      <div>
-        <label htmlFor="material" className="rotulo">Material desejado</label>
-        <input id="material" name="material" className="campo" placeholder="Ex.: zircônia, E-max" />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label htmlFor="escala_cor" className="rotulo">Escala de cor</label>
-          <select id="escala_cor" name="escala_cor" className="campo" defaultValue="Vita Classical">
-            {ESCALAS_COR.map((e) => <option key={e}>{e}</option>)}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="cor" className="rotulo">Cor</label>
-          <input id="cor" name="cor" list="cores-pedido" className="campo" placeholder="Ex.: A2" />
-          <datalist id="cores-pedido">{CORES_VITA_CLASSICAL.map((c) => <option key={c} value={c} />)}</datalist>
-        </div>
-      </div>
-      <div>
         <label htmlFor="envio" className="rotulo">Como vai enviar o material</label>
         <select id="envio" name="envio" className="campo">
           {FORMAS_ENVIO.map((f) => <option key={f}>{f}</option>)}
@@ -51,6 +24,7 @@ export function FormularioPedido({ prazoPadrao }: { prazoPadrao: string }) {
         <label htmlFor="data_prevista" className="rotulo">Para quando precisa</label>
         <input id="data_prevista" name="data_prevista" type="date" defaultValue={prazoPadrao} className="campo" />
       </div>
+      <CamposTrabalho quem="dentista" />
       <div className="col-span-full">
         <label htmlFor="descricao" className="rotulo">Instruções para o laboratório</label>
         <textarea id="descricao" name="descricao" rows={3} className="campo" placeholder="Ex.: preparo para coroa total, término em chanfro, paciente com bruxismo" />

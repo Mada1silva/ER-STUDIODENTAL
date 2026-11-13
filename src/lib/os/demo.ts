@@ -1,5 +1,7 @@
 import type { Dentista, EtapaBancada, HistoricoStatus, OrdemComDentista, StatusOS, TipoTrabalho } from "@/types/database";
 import { hojeISO, somarDias } from "@/lib/datas";
+import { parseElementos } from "./dentes";
+import { ITENS_POR_TIPO } from "./itens";
 
 /**
  * Dados FICTÍCIOS usados no "modo demonstração" (quando o Supabase ainda não foi configurado).
@@ -42,7 +44,17 @@ const linhas: Linha[] = [
   ["d3", "Paciente E. G.", "coroa_sobre_implante", "36", "Zircônia", "B2", false, 0, 800, [["recebido", null, 125], ["em_andamento", "cad", 100], ["finalizado", null, 2]]],
   ["d1", "Paciente T. V.", "coroa_emax", "14", "E-max", "A1", true, 1, 750, [["recebido", null, 26], ["em_andamento", "cad", 5]]],
   ["d2", "Paciente A. B.", "coroa_zirconia", "46", "Zircônia", "A3", false, 0, 450, [["recebido", null, 140], ["em_andamento", "cad", 120], ["finalizado", null, 20], ["saindo_entrega", null, 0.6]]],
+  // Chegou faltando o análogo (mostra o aviso no portal da Dra. Ana)
+  ["d1", "Paciente P. C.", "coroa_sobre_implante", "46", "Zircônia", "A3", false, 5, 450, [["recebido", null, 3]]],
 ];
+
+/** Fotos ilustrativas da saída na demonstração (do site antigo). */
+const FOTO_DEMO: Partial<Record<TipoTrabalho, string>> = {
+  coroa_zirconia: "/img/bgdente3.jpg", coroa_emax: "/img/bgdente3.jpg", metalo_ceramica: "/img/bgdente3.jpg", faceta_lente: "/img/d1.jpg",
+  protese_total: "/img/d2.jpg", protocolo_implante: "/img/d3.jpg", coroa_sobre_implante: "/img/carroussel-3.jpeg", ppr: "/img/carroussel-2.jpeg",
+};
+/** Token fixo por OS na demonstração (no banco ele é aleatório). */
+const tokenDemo = (n: number) => `demo${String(n).padStart(4, "0")}acompanhamento`;
 
 const horasAtras = (h: number) => new Date(Date.now() - h * 36e5).toISOString();
 
@@ -56,15 +68,23 @@ export function ordensDemo(): (OrdemComDentista & { historico: HistoricoStatus[]
       id: i + 1, ordem_id: id, status_anterior: i ? passos[i - 1][0] : null, status_novo: s, etapa_bancada: etapa, alterado_em: horasAtras(h),
     }));
     const ultimo = historico[historico.length - 1];
+    const chegou = ultimo.status_novo === "recebido";
+    const pronto = ["finalizado", "saindo_entrega", "entregue"].includes(ultimo.status_novo);
     return {
       id, numero, dentista_id: dentistaId,
-      dentista: { id: dentista.id, nome: dentista.nome, clinica: dentista.clinica },
+      dentista: { id: dentista.id, nome: dentista.nome, clinica: dentista.clinica, whatsapp: dentista.whatsapp, cro: dentista.cro, cro_uf: dentista.cro_uf },
       paciente_nome: paciente, tipo_trabalho: tipo, descricao: null, elementos, material, escala_cor: "Vita Classical", cor,
       status: ultimo.status_novo, etapa_bancada: ultimo.status_novo === "em_andamento" ? ultimo.etapa_bancada : null,
       status_desde: ultimo.alterado_em, prioridade: urgente ? "urgente" : "normal",
       data_entrada: historico[0].alterado_em.slice(0, 10), data_prevista: somarDias(hoje, dias),
       data_entrega: ultimo.status_novo === "entregue" ? ultimo.alterado_em : null,
       valor, observacoes: null, created_at: historico[0].alterado_em, updated_at: ultimo.alterado_em, historico,
+      dentes: parseElementos(elementos),
+      itens: ITENS_POR_TIPO[tipo].map((c) => ({ c, conf: chegou ? (paciente === "Paciente P. C." ? c !== "analogo" : null) : true })),
+      conferido_em: chegou && paciente !== "Paciente P. C." ? null : horasAtras(chegou ? 2.5 : passos[0][2] - 0.5),
+      foto_saida_url: pronto ? (FOTO_DEMO[tipo] ?? null) : null,
+      foto_saida_em: pronto ? ultimo.alterado_em : null,
+      token_publico: tokenDemo(numero),
     };
   });
 }

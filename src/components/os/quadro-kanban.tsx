@@ -27,7 +27,7 @@ export function QuadroKanban({ ordensIniciais, demo }: Props) {
   const [arrastando, setArrastando] = useState<string | null>(null);
   const [colunaAlvo, setColunaAlvo] = useState<StatusOS | null>(null);
   const [ocupados, setOcupados] = useState<Set<string>>(new Set());
-  const [mensagem, setMensagem] = useState<{ tipo: "erro" | "ok"; texto: string } | null>(null);
+  const [mensagem, setMensagem] = useState<{ tipo: "erro" | "ok"; texto: string; link?: { href: string; texto: string } } | null>(null);
   const [, iniciarTransicao] = useTransition();
 
   const termo = normalizar(busca.trim());
@@ -75,8 +75,14 @@ export function QuadroKanban({ ordensIniciais, demo }: Props) {
         setOrdens((lista) => lista.map((o) => (o.id === id ? antes : o)));
         setMensagem({ tipo: "erro", texto: r.erro });
       } else {
-        const aviso = indiceStatus(novoStatus) > indiceStatus(antes.status) ? " O dentista já vê isso no portal." : "";
-        setMensagem({ tipo: "ok", texto: `${formatarNumeroOS(ordem.numero)} agora está em “${NOME_STATUS[novoStatus]}”.${aviso}` });
+        const avancou = indiceStatus(novoStatus) > indiceStatus(antes.status);
+        const aviso = avancou ? " O dentista já vê isso no portal." : "";
+        const pronto = avancou && (novoStatus === "finalizado" || novoStatus === "saindo_entrega");
+        setMensagem({
+          tipo: "ok",
+          texto: `${formatarNumeroOS(ordem.numero)} agora está em “${NOME_STATUS[novoStatus]}”.${aviso}`,
+          link: pronto ? { href: `/painel/os/${id}`, texto: ordem.foto_saida_url ? "Avisar no WhatsApp" : "Tirar foto da saída e avisar" } : undefined,
+        });
       }
     });
   }
@@ -160,6 +166,11 @@ export function QuadroKanban({ ordensIniciais, demo }: Props) {
         <p role="status" className={`rounded-lg px-3 py-2 text-sm ${mensagem.tipo === "erro" ? "bg-red-50 text-red-800" : "bg-emerald-50 text-emerald-800"}`}>
           {mensagem.texto}
           {demo && mensagem.tipo === "ok" && " (demonstração: não foi salvo)"}
+          {mensagem.link && (
+            <Link href={mensagem.link.href} className="ml-2 font-semibold whitespace-nowrap underline underline-offset-2">
+              {mensagem.link.texto}
+            </Link>
+          )}
         </p>
       )}
 

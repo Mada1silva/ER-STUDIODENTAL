@@ -3,7 +3,8 @@
 import { useActionState } from "react";
 import type { Dentista } from "@/types/database";
 import { criarOrdem, type EstadoFormOS } from "@/lib/os/acoes";
-import { CORES_VITA_CLASSICAL, ESCALAS_COR, PRIORIDADES, TIPOS_TRABALHO } from "@/lib/os/constantes";
+import { PRIORIDADES } from "@/lib/os/constantes";
+import { CamposTrabalho } from "./campos-trabalho";
 
 type Props = { dentistas: Pick<Dentista, "id" | "nome" | "clinica">[]; prazoPadrao: string };
 
@@ -33,38 +34,7 @@ export function FormularioOS({ dentistas, prazoPadrao }: Props) {
 
       <fieldset className="contents">
         <legend className="col-span-full mt-2 font-serif text-2xl">Trabalho</legend>
-        <div>
-          <label htmlFor="tipo_trabalho" className="rotulo">Tipo de trabalho *</label>
-          <select id="tipo_trabalho" name="tipo_trabalho" required className="campo" defaultValue="">
-            <option value="" disabled>Selecione…</option>
-            {TIPOS_TRABALHO.map((t) => (
-              <option key={t.codigo} value={t.codigo}>{t.nome}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="elementos" className="rotulo">Dentes / elementos</label>
-          <input id="elementos" name="elementos" className="campo" placeholder="Ex.: 11, 21 ou arcada superior" />
-        </div>
-        <div>
-          <label htmlFor="material" className="rotulo">Material</label>
-          <input id="material" name="material" className="campo" placeholder="Ex.: zircônia multicamada, E-max" />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="escala_cor" className="rotulo">Escala de cor</label>
-            <select id="escala_cor" name="escala_cor" className="campo" defaultValue="Vita Classical">
-              {ESCALAS_COR.map((e) => <option key={e}>{e}</option>)}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="cor" className="rotulo">Cor</label>
-            <input id="cor" name="cor" list="cores" className="campo" placeholder="Ex.: A2" />
-            <datalist id="cores">
-              {CORES_VITA_CLASSICAL.map((c) => <option key={c} value={c} />)}
-            </datalist>
-          </div>
-        </div>
+        <CamposTrabalho quem="laboratorio" />
         <div className="col-span-full">
           <label htmlFor="descricao" className="rotulo">Descrição / instruções do dentista</label>
           <textarea id="descricao" name="descricao" rows={3} className="campo" />
