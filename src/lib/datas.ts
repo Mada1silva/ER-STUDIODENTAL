@@ -45,3 +45,34 @@ export function formatarMoeda(valor: number | null): string {
   if (valor == null) return "—";
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
+
+/** "hoje às 09:12", "ontem às 17:40" ou "10/11 às 08:05". */
+export function quando(iso: string): string {
+  const d = new Date(iso);
+  const dia = new Intl.DateTimeFormat("en-CA", { timeZone: FUSO }).format(d);
+  const hora = new Intl.DateTimeFormat("pt-BR", { timeZone: FUSO, hour: "2-digit", minute: "2-digit" }).format(d);
+  const dif = diasAte(dia);
+  if (dif === 0) return `hoje às ${hora}`;
+  if (dif === -1) return `ontem às ${hora}`;
+  return `${formatarData(dia).slice(0, 5)} às ${hora}`;
+}
+
+/** Mês no formato AAAA-MM, no fuso de Brasília. */
+export function mesDe(iso: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: FUSO }).format(new Date(iso)).slice(0, 7);
+}
+
+const NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+export function nomeMes(mes: string): string {
+  const [a, m] = mes.split("-");
+  return `${NOMES_MES[Number(m) - 1]} de ${a}`;
+}
+
+/** Primeiro instante do mês (AAAA-MM) e do mês seguinte, em UTC, considerando o fuso de Brasília (UTC-3). */
+export function limitesDoMes(mes: string): { inicio: string; fim: string } {
+  const [a, m] = mes.split("-").map(Number);
+  const inicio = new Date(Date.UTC(a, m - 1, 1, 3));
+  const fim = new Date(Date.UTC(a, m, 1, 3));
+  return { inicio: inicio.toISOString(), fim: fim.toISOString() };
+}

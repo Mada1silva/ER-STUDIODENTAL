@@ -1,29 +1,72 @@
-import type { PrioridadeOS, StatusOS, TipoTrabalho } from "@/types/database";
+import type { EtapaBancada, PrioridadeOS, StatusOS, TipoTrabalho } from "@/types/database";
 
-/** Colunas do Kanban, na ordem da produção. Igual à tabela os_status do banco. */
-export const STATUS_OS: { codigo: StatusOS; nome: string; cor: string; dica: string }[] = [
-  { codigo: "recebido", nome: "Recebido", cor: "#64748b", dica: "Moldagem/escaneamento chegou ao laboratório" },
-  { codigo: "modelagem", nome: "Em Modelagem", cor: "#d97706", dica: "Gesso, modelos e montagem em articulador" },
-  { codigo: "cad", nome: "CAD", cor: "#0284c7", dica: "Desenho digital do trabalho" },
-  { codigo: "fresagem_ceramica", nome: "Fresagem/Cerâmica", cor: "#7c3aed", dica: "Fresagem, sinterização e aplicação de cerâmica" },
-  { codigo: "acabamento", nome: "Acabamento", cor: "#db2777", dica: "Ajustes finais, glaze e polimento" },
-  { codigo: "pronto", nome: "Pronto", cor: "#059669", dica: "Pronto para entrega ao dentista" },
+export interface InfoStatus {
+  codigo: StatusOS;
+  nome: string;
+  /** Cor principal da etapa (barra, cabeçalho da coluna). */
+  cor: string;
+  /** Fundo claro e texto escuro da mesma cor, para selos legíveis. */
+  fundo: string;
+  texto: string;
+  dica: string;
+  /** Frase usada na linha do tempo: "Chegou ao laboratório hoje às 09:12". */
+  frase: string;
+}
+
+/** As 5 etapas, na ordem. Iguais à tabela os_status do banco. */
+export const STATUS_OS: InfoStatus[] = [
+  { codigo: "recebido", nome: "Chegou", cor: "#2563eb", fundo: "#eff6ff", texto: "#1e40af", dica: "O trabalho chegou ao laboratório", frase: "Chegou ao laboratório" },
+  { codigo: "em_andamento", nome: "Em andamento", cor: "#d97706", fundo: "#fffbeb", texto: "#92400e", dica: "Em produção na bancada", frase: "Entrou em produção" },
+  { codigo: "finalizado", nome: "Finalizado", cor: "#16a34a", fundo: "#f0fdf4", texto: "#166534", dica: "Pronto, aguardando a entrega", frase: "Ficou pronto" },
+  { codigo: "saindo_entrega", nome: "Saindo para entrega", cor: "#7c3aed", fundo: "#f5f3ff", texto: "#5b21b6", dica: "A caminho do consultório", frase: "Saiu para entrega" },
+  { codigo: "entregue", nome: "Entregue", cor: "#475569", fundo: "#f1f5f9", texto: "#1e293b", dica: "Recebido pelo consultório", frase: "Entregue no consultório" },
 ];
 
+export const INFO_STATUS = Object.fromEntries(STATUS_OS.map((s) => [s.codigo, s])) as Record<StatusOS, InfoStatus>;
 export const NOME_STATUS = Object.fromEntries(STATUS_OS.map((s) => [s.codigo, s.nome])) as Record<StatusOS, string>;
 
+/** Texto do botão que leva para a próxima etapa. */
+export const ACAO_PROXIMA: Partial<Record<StatusOS, string>> = {
+  recebido: "Iniciar produção",
+  em_andamento: "Finalizar",
+  finalizado: "Saiu para entrega",
+  saindo_entrega: "Confirmar entrega",
+};
+
+export function indiceStatus(s: StatusOS) {
+  return STATUS_OS.findIndex((x) => x.codigo === s);
+}
+
 export function proximoStatus(atual: StatusOS): StatusOS | null {
-  const i = STATUS_OS.findIndex((s) => s.codigo === atual);
-  return STATUS_OS[i + 1]?.codigo ?? null;
+  return STATUS_OS[indiceStatus(atual) + 1]?.codigo ?? null;
 }
 
 export function statusAnterior(atual: StatusOS): StatusOS | null {
-  const i = STATUS_OS.findIndex((s) => s.codigo === atual);
+  const i = indiceStatus(atual);
   return i > 0 ? STATUS_OS[i - 1].codigo : null;
 }
 
 export function ehStatusValido(valor: unknown): valor is StatusOS {
   return STATUS_OS.some((s) => s.codigo === valor);
+}
+
+/** Etapas internas da bancada (só para a equipe, dentro de "Em andamento"). */
+export const ETAPAS_BANCADA: { codigo: EtapaBancada; nome: string }[] = [
+  { codigo: "modelagem", nome: "Modelagem" },
+  { codigo: "cad", nome: "CAD" },
+  { codigo: "fresagem_ceramica", nome: "Fresagem/Cerâmica" },
+  { codigo: "acabamento", nome: "Acabamento" },
+];
+
+export const NOME_BANCADA = Object.fromEntries(ETAPAS_BANCADA.map((e) => [e.codigo, e.nome])) as Record<EtapaBancada, string>;
+
+export function proximaBancada(atual: EtapaBancada | null) {
+  const i = ETAPAS_BANCADA.findIndex((e) => e.codigo === atual);
+  return ETAPAS_BANCADA[i + 1] ?? null;
+}
+
+export function ehBancadaValida(valor: unknown): valor is EtapaBancada {
+  return ETAPAS_BANCADA.some((e) => e.codigo === valor);
 }
 
 export const TIPOS_TRABALHO: { codigo: TipoTrabalho; nome: string }[] = [
@@ -57,6 +100,17 @@ export const CORES_VITA_CLASSICAL = [
   "A1", "A2", "A3", "A3.5", "A4", "B1", "B2", "B3", "B4", "C1", "C2", "C3", "C4", "D2", "D3", "D4", "BL1", "BL2", "BL3", "BL4",
 ];
 
+export const FORMAS_ENVIO = [
+  "Escaneamento digital (arquivo STL)",
+  "Moldagem física (laboratório busca no consultório)",
+  "Moldagem física (entrego no laboratório)",
+];
+
 export function formatarNumeroOS(numero: number) {
   return `OS-${String(numero).padStart(4, "0")}`;
+}
+
+/** Busca sem acento e sem maiúsculas. */
+export function normalizar(texto: string) {
+  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }

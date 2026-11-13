@@ -1,9 +1,9 @@
-import type { Dentista, HistoricoStatus, OrdemComDentista, StatusOS, TipoTrabalho } from "@/types/database";
+import type { Dentista, EtapaBancada, HistoricoStatus, OrdemComDentista, StatusOS, TipoTrabalho } from "@/types/database";
 import { hojeISO, somarDias } from "@/lib/datas";
 
 /**
  * Dados FICTÍCIOS usados no "modo demonstração" (quando o Supabase ainda não foi configurado).
- * Servem só para ver o painel funcionando. Nada aqui é salvo.
+ * Servem só para ver o sistema funcionando. Nada aqui é salvo.
  */
 
 export const dentistasDemo: Dentista[] = [
@@ -12,47 +12,59 @@ export const dentistasDemo: Dentista[] = [
   { id: "d3", nome: "Dra. Carla Exemplo", cro: "0003", cro_uf: "GO", clinica: "Instituto Exemplo", telefone: null, whatsapp: "(62) 90000-0003", email: null, cidade: "Goiânia", ativo: true },
 ];
 
-type Linha = [numero: number, dentista: string, paciente: string, tipo: TipoTrabalho, elementos: string, material: string, cor: string, status: StatusOS, urgente: boolean, diasPrazo: number, valor: number];
+/** No modo demonstração, o Portal do Dentista mostra a visão desta dentista. */
+export const DENTISTA_DEMO_PORTAL = "d1";
 
-const linhas: Linha[] = [
-  [1, "d1", "Paciente M. S.", "coroa_zirconia", "11, 21", "Zircônia multicamada", "A2", "recebido", false, 5, 900],
-  [2, "d2", "Paciente J. P.", "protocolo_implante", "Arcada inferior", "Resina + dente Delara", "A3", "modelagem", true, 2, 1600],
-  [3, "d3", "Paciente R. A.", "faceta_lente", "13 a 23", "E-max", "BL2", "cad", false, 4, 3600],
-  [4, "d1", "Paciente L. F.", "ppr", "Arcada superior", "Cromo-cobalto", "A3.5", "fresagem_ceramica", false, 3, 650],
-  [5, "d2", "Paciente C. N.", "protese_total", "Superior e inferior", "Resina acrílica", "A2", "acabamento", false, -1, 1200],
-  [6, "d3", "Paciente E. G.", "coroa_sobre_implante", "36", "Zircônia", "B2", "pronto", false, 0, 800],
-  [7, "d1", "Paciente T. V.", "coroa_emax", "14", "E-max", "A1", "cad", true, 1, 750],
+type Passo = [StatusOS, EtapaBancada | null, number]; // etapa, bancada, horas atrás
+type Linha = [dentista: string, paciente: string, tipo: TipoTrabalho, elementos: string, material: string, cor: string, urgente: boolean, diasPrazo: number, valor: number, passos: Passo[]];
+
+const entregue = (dias: number): Passo[] => [
+  ["recebido", null, dias * 24 + 150], ["em_andamento", "cad", dias * 24 + 140], ["finalizado", null, dias * 24 + 30],
+  ["saindo_entrega", null, dias * 24 + 4], ["entregue", null, dias * 24 + 3],
 ];
 
-export function ordensDemo(): OrdemComDentista[] {
+const linhas: Linha[] = [
+  // Já entregues (outubro e início de novembro): alimentam o Financeiro
+  ["d1", "Paciente F. A.", "coroa_zirconia", "21", "Zircônia", "A2", false, -40, 450, entregue(40)],
+  ["d2", "Paciente O. P.", "protocolo_implante", "Arcada superior", "Resina + dente Delara", "A2", false, -37, 1600, entregue(37)],
+  ["d3", "Paciente S. M.", "faceta_lente", "11, 21", "E-max", "BL2", false, -33, 900, entregue(33)],
+  ["d1", "Paciente D. V.", "coroa_sobre_implante", "36", "Zircônia", "A3", false, -12, 450, entregue(12)],
+  ["d2", "Paciente K. T.", "protese_total", "Superior e inferior", "Dentes New Ace", "A2", false, -10, 600, entregue(10)],
+  ["d1", "Paciente B. Q.", "faceta_lente", "13 a 23", "E-max", "BL3", false, -8, 2700, entregue(8)],
+  ["d3", "Paciente N. J.", "coroa_zirconia", "46", "Zircônia", "A3.5", false, -6, 450, entregue(6)],
+  ["d1", "Paciente R. Z.", "ppr", "Arcada inferior", "Cromo-cobalto", "A3", false, -3, 650, entregue(3)],
+  // Em produção agora
+  ["d1", "Paciente M. S.", "coroa_zirconia", "11, 21", "Zircônia multicamada", "A2", false, 5, 900, [["recebido", null, 1.5]]],
+  ["d2", "Paciente J. P.", "protocolo_implante", "Arcada inferior", "Resina + dente Delara", "A3", true, 2, 1600, [["recebido", null, 27], ["em_andamento", "modelagem", 22]]],
+  ["d3", "Paciente R. A.", "faceta_lente", "13 a 23", "E-max", "BL2", false, 4, 3600, [["recebido", null, 50], ["em_andamento", "modelagem", 46], ["em_andamento", "cad", 20]]],
+  ["d1", "Paciente L. F.", "ppr", "Arcada superior", "Cromo-cobalto", "A3.5", false, 3, 650, [["recebido", null, 74], ["em_andamento", "modelagem", 70], ["em_andamento", "fresagem_ceramica", 6]]],
+  ["d2", "Paciente C. N.", "protese_total", "Superior e inferior", "Resina acrílica", "A2", false, -1, 1200, [["recebido", null, 120], ["em_andamento", "modelagem", 98], ["em_andamento", "acabamento", 3]]],
+  ["d3", "Paciente E. G.", "coroa_sobre_implante", "36", "Zircônia", "B2", false, 0, 800, [["recebido", null, 125], ["em_andamento", "cad", 100], ["finalizado", null, 2]]],
+  ["d1", "Paciente T. V.", "coroa_emax", "14", "E-max", "A1", true, 1, 750, [["recebido", null, 26], ["em_andamento", "cad", 5]]],
+  ["d2", "Paciente A. B.", "coroa_zirconia", "46", "Zircônia", "A3", false, 0, 450, [["recebido", null, 140], ["em_andamento", "cad", 120], ["finalizado", null, 20], ["saindo_entrega", null, 0.6]]],
+];
+
+const horasAtras = (h: number) => new Date(Date.now() - h * 36e5).toISOString();
+
+export function ordensDemo(): (OrdemComDentista & { historico: HistoricoStatus[] })[] {
   const hoje = hojeISO();
-  return linhas.map(([numero, dentistaId, paciente, tipo, elementos, material, cor, status, urgente, dias, valor]) => {
+  return linhas.map(([dentistaId, paciente, tipo, elementos, material, cor, urgente, dias, valor, passos], k) => {
+    const numero = k + 1;
+    const id = `demo-${numero}`;
     const dentista = dentistasDemo.find((d) => d.id === dentistaId)!;
+    const historico: HistoricoStatus[] = passos.map(([s, etapa, h], i) => ({
+      id: i + 1, ordem_id: id, status_anterior: i ? passos[i - 1][0] : null, status_novo: s, etapa_bancada: etapa, alterado_em: horasAtras(h),
+    }));
+    const ultimo = historico[historico.length - 1];
     return {
-      id: `demo-${numero}`,
-      numero,
-      dentista_id: dentistaId,
+      id, numero, dentista_id: dentistaId,
       dentista: { id: dentista.id, nome: dentista.nome, clinica: dentista.clinica },
-      paciente_nome: paciente,
-      tipo_trabalho: tipo,
-      descricao: null,
-      elementos,
-      material,
-      escala_cor: "Vita Classical",
-      cor,
-      status,
-      prioridade: urgente ? "urgente" : "normal",
-      data_entrada: somarDias(hoje, -3),
-      data_prevista: somarDias(hoje, dias),
-      data_entrega: null,
-      valor,
-      observacoes: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      paciente_nome: paciente, tipo_trabalho: tipo, descricao: null, elementos, material, escala_cor: "Vita Classical", cor,
+      status: ultimo.status_novo, etapa_bancada: ultimo.status_novo === "em_andamento" ? ultimo.etapa_bancada : null,
+      status_desde: ultimo.alterado_em, prioridade: urgente ? "urgente" : "normal",
+      data_entrada: historico[0].alterado_em.slice(0, 10), data_prevista: somarDias(hoje, dias),
+      data_entrega: ultimo.status_novo === "entregue" ? ultimo.alterado_em : null,
+      valor, observacoes: null, created_at: historico[0].alterado_em, updated_at: ultimo.alterado_em, historico,
     };
   });
-}
-
-export function historicoDemo(ordem: OrdemComDentista): HistoricoStatus[] {
-  return [{ id: 1, ordem_id: ordem.id, status_anterior: null, status_novo: "recebido", alterado_em: `${ordem.data_entrada}T11:00:00Z` }];
 }

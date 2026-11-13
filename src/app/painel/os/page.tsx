@@ -14,7 +14,7 @@ export default async function PaginaOS() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-serif text-4xl font-semibold">Produção</h1>
-          <p className="text-sm text-grafite-600">Arraste os cartões entre as etapas ou use o botão de cada trabalho.</p>
+          <p className="text-sm text-grafite-600">Cada cor é uma etapa. Arraste os cartões ou use os botões.</p>
         </div>
         <Link href="/painel/os/nova" className="rounded-full bg-grafite-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-grafite-700">
           + Nova OS

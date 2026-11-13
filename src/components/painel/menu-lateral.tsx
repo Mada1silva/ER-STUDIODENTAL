@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const itens = [
   { href: "/painel/os", rotulo: "Ordens de Serviço", pronto: true },
   { href: "/painel/dentistas", rotulo: "Dentistas", pronto: true },
-  { href: "/painel/financeiro", rotulo: "Financeiro", pronto: false },
+  { href: "/painel/financeiro", rotulo: "Financeiro", pronto: true },
 ];
 
 export function MenuLateral() {

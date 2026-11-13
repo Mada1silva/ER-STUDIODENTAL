@@ -17,13 +17,13 @@ export default async function NovaOS() {
       <div>
         <Link href="/painel/os" className="text-sm text-grafite-600 hover:underline">← Voltar para a produção</Link>
         <h1 className="mt-2 font-serif text-4xl font-semibold">Nova ordem de serviço</h1>
-        <p className="text-sm text-grafite-600">O trabalho entra na coluna “Recebido”. Prazo padrão: {site.prazoPadraoDiasUteis} dias úteis.</p>
+        <p className="text-sm text-grafite-600">O trabalho entra como “Chegou”, com a data e a hora de agora. Prazo padrão: {site.prazoPadraoDiasUteis} dias úteis.</p>
       </div>
       {demo && <AvisoDemo />}
       {dentistas.length === 0 && !demo && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Cadastre pelo menos um dentista antes de criar uma OS.</p>
       )}
-      <FormularioOS dentistas={dentistas} hoje={hoje} prazoPadrao={somarDiasUteis(hoje, site.prazoPadraoDiasUteis)} />
+      <FormularioOS dentistas={dentistas} prazoPadrao={somarDiasUteis(hoje, site.prazoPadraoDiasUteis)} />
     </div>
   );
 }

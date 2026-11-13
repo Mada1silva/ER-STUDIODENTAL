@@ -5,9 +5,9 @@ import type { Dentista } from "@/types/database";
 import { criarOrdem, type EstadoFormOS } from "@/lib/os/acoes";
 import { CORES_VITA_CLASSICAL, ESCALAS_COR, PRIORIDADES, TIPOS_TRABALHO } from "@/lib/os/constantes";
 
-type Props = { dentistas: Pick<Dentista, "id" | "nome" | "clinica">[]; hoje: string; prazoPadrao: string };
+type Props = { dentistas: Pick<Dentista, "id" | "nome" | "clinica">[]; prazoPadrao: string };
 
-export function FormularioOS({ dentistas, hoje, prazoPadrao }: Props) {
+export function FormularioOS({ dentistas, prazoPadrao }: Props) {
   const [estado, enviar, enviando] = useActionState<EstadoFormOS, FormData>(criarOrdem, {});
 
   return (
@@ -73,15 +73,9 @@ export function FormularioOS({ dentistas, hoje, prazoPadrao }: Props) {
 
       <fieldset className="contents">
         <legend className="col-span-full mt-2 font-serif text-2xl">Prazo e valor</legend>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="data_entrada" className="rotulo">Entrada</label>
-            <input id="data_entrada" name="data_entrada" type="date" defaultValue={hoje} className="campo" />
-          </div>
-          <div>
-            <label htmlFor="data_prevista" className="rotulo">Entrega prevista</label>
-            <input id="data_prevista" name="data_prevista" type="date" defaultValue={prazoPadrao} className="campo" />
-          </div>
+        <div>
+          <label htmlFor="data_prevista" className="rotulo">Entrega prevista</label>
+          <input id="data_prevista" name="data_prevista" type="date" defaultValue={prazoPadrao} className="campo" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>

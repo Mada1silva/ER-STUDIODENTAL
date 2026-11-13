@@ -31,24 +31,26 @@ create type tipo_trabalho as enum (
 
 create type prioridade_os as enum ('normal', 'urgente');
 
+-- Detalhe interno da bancada, usado só enquanto a OS está "Em andamento".
+create type etapa_bancada as enum ('modelagem', 'cad', 'fresagem_ceramica', 'acabamento');
+
 -- ---------------------------------------------------------------------
--- 2. Status de produção (tabela de referência, alimenta o Kanban)
+-- 2. Etapas da OS (tabela de referência, alimenta o Kanban e o Portal)
+--    São as 5 etapas que o dentista e a equipe enxergam, cada uma com sua cor.
 -- ---------------------------------------------------------------------
 create table public.os_status (
   codigo     text primary key,           -- ex.: 'cad'
   nome       text not null,              -- ex.: 'CAD'
   ordem      smallint not null unique,   -- posição da coluna no Kanban
-  cor        text not null default '#64748b',
-  finalizado boolean not null default false
+  cor        text not null default '#64748b'
 );
 
-insert into public.os_status (codigo, nome, ordem, cor, finalizado) values
-  ('recebido',          'Recebido',          1, '#64748b', false),
-  ('modelagem',         'Em Modelagem',      2, '#d97706', false),
-  ('cad',               'CAD',               3, '#0284c7', false),
-  ('fresagem_ceramica', 'Fresagem/Cerâmica', 4, '#7c3aed', false),
-  ('acabamento',        'Acabamento',        5, '#db2777', false),
-  ('pronto',            'Pronto',            6, '#059669', true);
+insert into public.os_status (codigo, nome, ordem, cor) values
+  ('recebido',       'Chegou',              1, '#2563eb'),
+  ('em_andamento',   'Em andamento',        2, '#d97706'),
+  ('finalizado',     'Finalizado',          3, '#16a34a'),
+  ('saindo_entrega', 'Saindo para entrega', 4, '#7c3aed'),
+  ('entregue',       'Entregue',            5, '#475569');
 
 -- ---------------------------------------------------------------------
 -- 3. Dentistas parceiros (clientes do laboratório)
@@ -119,10 +121,12 @@ create table public.ordens_servico (
   escala_cor     text,                  -- sistema da escala, ex.: 'Vita Classical', 'Vita 3D-Master'
   cor            text,                  -- cor escolhida, ex.: 'A2', '2M2'
   status         text not null default 'recebido' references public.os_status (codigo),
+  etapa_bancada  etapa_bancada,         -- só quando status = 'em_andamento'
+  status_desde   timestamptz not null default now(), -- quando entrou na etapa atual
   prioridade     prioridade_os not null default 'normal',
   data_entrada   date not null default current_date,
   data_prevista  date,                  -- prazo combinado (padrão do lab: 5 dias úteis)
-  data_entrega   timestamptz,           -- quando saiu do laboratório
+  data_entrega   timestamptz,           -- preenchida sozinha quando a OS vira "Entregue" (base da fatura)
   valor          numeric(10, 2),        -- usado depois pelo módulo Financeiro
   observacoes    text,
   criado_por     uuid references auth.users (id) default auth.uid(),
@@ -133,15 +137,17 @@ create table public.ordens_servico (
 create index ordens_servico_status_idx   on public.ordens_servico (status);
 create index ordens_servico_dentista_idx on public.ordens_servico (dentista_id);
 create index ordens_servico_prazo_idx    on public.ordens_servico (data_prevista);
+create index ordens_servico_entrega_idx  on public.ordens_servico (data_entrega);
 
 -- ---------------------------------------------------------------------
--- 6. Histórico de status (quem moveu o trabalho e quando)
+-- 6. Histórico de etapas (quem moveu o trabalho e quando: vira a linha do tempo)
 -- ---------------------------------------------------------------------
 create table public.os_historico_status (
   id              bigint generated always as identity primary key,
   ordem_id        uuid not null references public.ordens_servico (id) on delete cascade,
   status_anterior text references public.os_status (codigo),
   status_novo     text not null references public.os_status (codigo),
+  etapa_bancada   etapa_bancada,
   alterado_por    uuid references auth.users (id) default auth.uid(),
   alterado_em     timestamptz not null default now()
 );
@@ -169,6 +175,35 @@ create trigger ordens_servico_updated_at
   before update on public.ordens_servico
   for each row execute function public.atualizar_updated_at();
 
+-- Ao mudar de etapa: guarda o horário, preenche a data de entrega e
+-- só mantém a etapa da bancada enquanto estiver "Em andamento".
+create or replace function public.ajustar_etapa_os()
+returns trigger
+language plpgsql
+as $$
+begin
+  if tg_op = 'INSERT' or new.status is distinct from old.status then
+    new.status_desde = now();
+    if new.status = 'em_andamento' and new.etapa_bancada is null then
+      new.etapa_bancada = 'modelagem';
+    end if;
+  end if;
+  if new.status <> 'em_andamento' then
+    new.etapa_bancada = null;
+  end if;
+  if new.status = 'entregue' then
+    new.data_entrega = coalesce(new.data_entrega, now());
+  else
+    new.data_entrega = null;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger ordens_servico_etapa
+  before insert or update of status, etapa_bancada on public.ordens_servico
+  for each row execute function public.ajustar_etapa_os();
+
 create or replace function public.registrar_historico_status()
 returns trigger
 language plpgsql
@@ -176,18 +211,18 @@ security definer set search_path = public
 as $$
 begin
   if tg_op = 'INSERT' then
-    insert into public.os_historico_status (ordem_id, status_anterior, status_novo)
-    values (new.id, null, new.status);
-  elsif new.status is distinct from old.status then
-    insert into public.os_historico_status (ordem_id, status_anterior, status_novo)
-    values (new.id, old.status, new.status);
+    insert into public.os_historico_status (ordem_id, status_anterior, status_novo, etapa_bancada)
+    values (new.id, null, new.status, new.etapa_bancada);
+  elsif new.status is distinct from old.status or new.etapa_bancada is distinct from old.etapa_bancada then
+    insert into public.os_historico_status (ordem_id, status_anterior, status_novo, etapa_bancada)
+    values (new.id, old.status, new.status, new.etapa_bancada);
   end if;
   return new;
 end;
 $$;
 
 create trigger ordens_servico_historico
-  after insert or update of status on public.ordens_servico
+  after insert or update of status, etapa_bancada on public.ordens_servico
   for each row execute function public.registrar_historico_status();
 
 -- ---------------------------------------------------------------------
@@ -241,6 +276,10 @@ create policy "os: laboratório total"
   on public.ordens_servico for all to authenticated using (public.eh_laboratorio()) with check (public.eh_laboratorio());
 create policy "os: dentista vê as suas"
   on public.ordens_servico for select to authenticated using (dentista_id = public.meu_dentista_id());
+-- Pedido pelo Portal: o dentista só cria OS em nome dele e sempre na primeira etapa.
+create policy "os: dentista pede trabalho"
+  on public.ordens_servico for insert to authenticated
+  with check (dentista_id = public.meu_dentista_id() and status = 'recebido' and valor is null);
 
 -- Histórico: laboratório vê tudo; dentista vê o histórico das suas OS.
 create policy "historico: laboratório"

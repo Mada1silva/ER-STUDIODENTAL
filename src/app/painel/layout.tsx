@@ -3,11 +3,17 @@ import { Logo } from "@/components/site/logo";
 import { MenuLateral } from "@/components/painel/menu-lateral";
 import { sair } from "@/lib/os/acoes";
 import { supabaseConfigurado } from "@/lib/supabase/config";
+import { redirect } from "next/navigation";
+import { obterPerfil } from "@/lib/os/dados";
 
 export const metadata = { title: "Painel do laboratório" };
 
 /** Layout padrão da área interna do laboratório. */
-export default function LayoutPainel({ children }: { children: React.ReactNode }) {
+export default async function LayoutPainel({ children }: { children: React.ReactNode }) {
+  // Dentista que entrar aqui por engano vai para o portal dele.
+  const perfil = await obterPerfil();
+  if (!perfil.demo && perfil.papel !== "laboratorio") redirect("/portal");
+
   return (
     <div className="min-h-dvh md:flex">
       <aside className="flex flex-col gap-4 bg-grafite-800 p-4 md:sticky md:top-0 md:h-dvh md:w-60 md:shrink-0 md:gap-8 md:p-5">

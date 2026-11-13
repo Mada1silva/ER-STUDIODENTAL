@@ -4,13 +4,11 @@
  *   npx supabase gen types typescript --project-id SEU_ID > src/types/supabase.ts
  */
 
-export type StatusOS =
-  | "recebido"
-  | "modelagem"
-  | "cad"
-  | "fresagem_ceramica"
-  | "acabamento"
-  | "pronto";
+/** As 5 etapas que o dentista e a equipe enxergam. */
+export type StatusOS = "recebido" | "em_andamento" | "finalizado" | "saindo_entrega" | "entregue";
+
+/** Detalhe interno da bancada, só enquanto a OS está "Em andamento". */
+export type EtapaBancada = "modelagem" | "cad" | "fresagem_ceramica" | "acabamento";
 
 export type TipoTrabalho =
   | "coroa_zirconia"
@@ -52,10 +50,12 @@ export interface OrdemServico {
   escala_cor: string | null;
   cor: string | null;
   status: StatusOS;
+  etapa_bancada: EtapaBancada | null;
+  status_desde: string; // quando entrou na etapa atual
   prioridade: PrioridadeOS;
   data_entrada: string; // AAAA-MM-DD
   data_prevista: string | null; // AAAA-MM-DD
-  data_entrega: string | null;
+  data_entrega: string | null; // preenchida quando vira "Entregue"
   valor: number | null;
   observacoes: string | null;
   created_at: string;
@@ -72,5 +72,6 @@ export interface HistoricoStatus {
   ordem_id: string;
   status_anterior: StatusOS | null;
   status_novo: StatusOS;
+  etapa_bancada: EtapaBancada | null;
   alterado_em: string;
 }
