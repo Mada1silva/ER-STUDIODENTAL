@@ -1,4 +1,11 @@
 /**
+ * A tabela fica só dentro do Portal do Dentista (padrão provisório, 14/11, até a Mada decidir).
+ * Para publicar no site para qualquer visitante, troque para true: /precos volta a abrir sem login
+ * e o link "Preços" volta ao menu do site.
+ */
+export const TABELA_PRECOS_PUBLICA = false;
+
+/**
  * Tabela de preços do laboratório (fonte: tabela-precos-edmar-reis, conferida com a Mada).
  * valor null = "sob consulta" (itens ainda não confirmados: Trilux, Vita, Premium).
  */

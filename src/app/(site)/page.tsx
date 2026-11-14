@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { TABELA_PRECOS_PUBLICA } from "@/lib/config/tabela-precos";
 import { linkWhatsApp, site } from "@/lib/config/site";
 import { IconeEmail, IconeInstagram, IconeLocal, IconeRelogio, IconeWhatsApp } from "@/components/site/icones";
 
@@ -264,9 +265,9 @@ export default function Inicio() {
             >
               <IconeWhatsApp /> Chamar no WhatsApp
             </a>
-            <a href="/precos" className="inline-flex items-center rounded-full border border-prata-500/50 px-6 py-3 font-medium text-prata-100 transition hover:border-prata-200">
-              Ver tabela de preços
-            </a>
+            <Link href={TABELA_PRECOS_PUBLICA ? "/precos" : "/portal/precos"} className="inline-flex items-center rounded-full border border-prata-500/50 px-6 py-3 font-medium text-prata-100 transition hover:border-prata-200">
+              {TABELA_PRECOS_PUBLICA ? "Ver tabela de preços" : "Tabela de preços (Portal do Dentista)"}
+            </Link>
             </div>
           </div>
           <ul className="space-y-4 text-prata-300">

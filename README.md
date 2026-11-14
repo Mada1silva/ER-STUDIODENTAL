@@ -9,7 +9,7 @@ Feito com **Next.js + Tailwind CSS + Supabase**, tudo em ferramentas gratuitas (
 |---|---|---|
 | 1. Ordens de Serviço (Kanban de produção) | `/painel/os` | ✅ primeira versão |
 | 2. Portal do Dentista | `/portal` | ✅ trabalhos do dentista com linha do tempo, avisos e pedido de trabalho |
-| 3. Site institucional | `/` e `/precos` | ✅ primeira versão, com tabela de preços |
+| 3. Site institucional | `/` | ✅ primeira versão. A tabela de preços fica no portal (`/portal/precos`); para publicá-la no site, troque `TABELA_PRECOS_PUBLICA` em `src/lib/config/tabela-precos.ts` |
 | 4. Financeiro básico | `/painel/financeiro` | ✅ fatura do mês por dentista/clínica, com resumo para WhatsApp |
 
 ### Diferenciais

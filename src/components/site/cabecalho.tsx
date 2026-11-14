@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./logo";
 import { linkWhatsApp } from "@/lib/config/site";
+import { TABELA_PRECOS_PUBLICA } from "@/lib/config/tabela-precos";
 import { IconeWhatsApp } from "./icones";
 
 const links = [
@@ -8,7 +9,7 @@ const links = [
   { href: "/#diferenciais", rotulo: "Diferenciais" },
   { href: "/#tecnologia", rotulo: "Para o dentista" },
   { href: "/#galeria", rotulo: "Casos" },
-  { href: "/precos", rotulo: "Preços" },
+  ...(TABELA_PRECOS_PUBLICA ? [{ href: "/precos", rotulo: "Preços" }] : []),
   { href: "/#contato", rotulo: "Contato" },
 ];
 
