@@ -174,9 +174,10 @@ export default function Inicio() {
           </div>
           <div className="mt-12">
             <h3 className="text-sm uppercase tracking-[0.3em] text-prata-500">Trabalhos que realizamos</h3>
-            <ul className="mt-4 flex flex-wrap gap-2">
+            {/* Grade: 5 por linha no computador e 2 no celular, para as linhas ficarem sempre completas. */}
+            <ul className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-5">
               {trabalhos.map((t) => (
-                <li key={t} className="rounded-full border border-prata-500/30 px-4 py-1.5 text-sm text-prata-300">
+                <li key={t} className="flex items-center justify-center rounded-full border border-prata-500/30 px-3 py-1.5 text-center text-sm leading-tight text-prata-300">
                   {t}
                 </li>
               ))}
